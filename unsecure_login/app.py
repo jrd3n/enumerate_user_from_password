@@ -1,5 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user
+import datetime
 
 app = Flask(__name__)
 login_manager = LoginManager()
@@ -9,7 +10,9 @@ login_manager.login_view = 'login'
 app.config['SECRET_KEY'] = 'mysecret'  # In production, use a secure and unique secret key
 
 # This is a dummy user store for the sake of demonstration. In real life, you'd use a database.
-users = {'username': {'password': 'password123'}}  # This is for a user named 'username' with a password 'password123'
+users = {'username': 
+                    {'password': 'password123',
+                    'next_login_attempt' : None}}  # This is for a user named 'username' with a password 'password123'
 
 class User(UserMixin):
     pass
@@ -32,15 +35,32 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        if users.get(username) == None:
-            return "Invalid username", 401
-        if users[username]['password'] == password:
+
+        user_data = users.get(username)
+
+        print(user_data)
+
+        # If the user does not exist
+        if user_data is None:
+            #return "Invalid username", 401
+            return render_template('login.html', message=f"User {username} not found!")
+
+        # If the password matches
+        if user_data['password'] == password:
+            # Reset the next_login_attempt
+            user_data['next_login_attempt'] = None
+            
+            # Here's where you would handle successful authentication
             user = User()
             user.id = username
             login_user(user)
             return redirect(url_for('main'))
-        return "Incorrect password", 401
-    return render_template('login.html')
+
+        render_template('login.html', message='Login not successful!')
+
+    message = request.args.get('message')  # Getting the message from URL parameter
+
+    return render_template('login.html', message=message)
 
 @app.route('/logout')
 @login_required
@@ -54,29 +74,17 @@ def pw_reset():
     if request.method == 'POST':
         username = request.form['username']
 
-        # Check if the username exists in your database or user storage
-        if username_exists(username):  # Replace with your own function or database check
-            # Implement the password reset functionality here.
-            # This could involve generating a reset token and sending an email with a reset link, or other logic as per your requirements.
+        user_data = users.get(username)
+        
+        if user_data is not None:
 
-            flash('Password reset instructions sent to your email!', 'success')
+            return redirect(url_for('login', message="reset email sent to user!"))  # Redirecting to a hypothetical 'login' route
 
-            return redirect(url_for('login'))  # Redirecting to a hypothetical 'login' route
         else:
-            flash('Username does not exist!', 'danger')
 
-    return render_template('password_reset.html')
+            return render_template('password_reset.html', message=f"{username} does not exist")
 
-def username_exists(username):
-    # Implement a check for the existence of a username in your user storage/database.
-    # Return True if exists, otherwise False.
-
-    # print(username)
-
-    if username in users:
-        return True
-    else:
-        return False
+    return render_template('password_reset.html', message= "")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

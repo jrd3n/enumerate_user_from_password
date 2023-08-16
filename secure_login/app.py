@@ -14,7 +14,6 @@ users = {'username':
                     {'password': 'password123',
                     'next_login_attempt' : None}}  # This is for a user named 'username' with a password 'password123'
 
-
 LOGIN_DELAY = datetime.timedelta(seconds=6)  # 6 seconds delay between login attempts
 
 class User(UserMixin):
@@ -91,14 +90,11 @@ def pw_reset():
         
         if user_data is not None:
 
-        # if username_exists(username):  # Replace with your own function or database check
-            # Implement the password reset functionality here.
-            # This could involve generating a reset token and sending an email with a reset link, or other logic as per your requirements.
             return redirect(url_for('login', message="reset email sent to user!"))  # Redirecting to a hypothetical 'login' route
 
         else:
 
-            return render_template('password_reset.html', message=f"{username} does not exist")
+            return redirect(url_for('login', message="reset email sent to user!"))  # Redirecting to a hypothetical 'login' route
 
     return render_template('password_reset.html', message= "")
 
